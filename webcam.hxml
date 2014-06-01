@@ -1,4 +1,4 @@
 -swf webcam.swf
 -main Main
--swf-header 640:480:40:000000
+-swf-header 320:280:40:000000
 -swf-version 11
