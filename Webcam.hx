@@ -22,6 +22,8 @@ class Webcam {
     var mic : flash.media.Microphone;
     var file : String;
     var share : String;
+    var h264Settings : flash.media.H264VideoStreamSettings;
+    var cameraFPS : Int;
 
     public function new(host, file,?share, token, width, height, fps) {
         this.file = file;
@@ -30,6 +32,7 @@ class Webcam {
         if( this.cam == null )
             throw "Webcam not found";
         this.cam.setMode(width, height, fps, true);
+        cameraFPS = cast(fps, Int);
         this.mic = flash.media.Microphone.getMicrophone();
         this.nc = new flash.net.NetConnection();
         this.nc.addEventListener(flash.events.NetStatusEvent.NET_STATUS,onEvent);
@@ -46,7 +49,17 @@ class Webcam {
             this.ns.addEventListener(flash.events.NetStatusEvent.NET_STATUS, onEvent);
             this.ns.publish(this.file,this.share);
         } else if (e.info.code == "NetStream.Publish.Start") {
+            this.cam.setKeyFrameInterval(cameraFPS);
+            this.cam.setQuality(37500, 0); // 37500 bytes per second == 300 kbps
             this.ns.attachCamera(this.cam);
+            h264Settings = new flash.media.H264VideoStreamSettings();
+            // Use Baseline Profile, Level 3.1
+            h264Settings.setProfileLevel(flash.media.H264Profile.BASELINE,
+                flash.media.H264Level.LEVEL_3_1);
+            h264Settings.setKeyFrameInterval(cameraFPS);
+            h264Settings.setQuality(37500, 0); // 300 kbps
+            this.ns.videoStreamSettings = h264Settings;
+
             this.ns.attachAudio(this.mic);
             //this.ns.bufferTime = 1;
         }
