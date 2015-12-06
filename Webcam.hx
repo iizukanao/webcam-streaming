@@ -19,6 +19,7 @@ class Webcam {
     var nc : flash.net.NetConnection;
     var ns : flash.net.NetStream;
     var cam : flash.media.Camera;
+    var mic : flash.media.Microphone;
     var file : String;
     var share : String;
     var h264Settings : flash.media.H264VideoStreamSettings;
@@ -27,11 +28,24 @@ class Webcam {
     public function new(host, file,?share, token, width, height, fps) {
         this.file = file;
         this.share = share;
+
+        // Set up camera
         this.cam = flash.media.Camera.getCamera();
         if( this.cam == null )
             throw "Webcam not found";
         this.cam.setMode(width, height, fps, true);
         cameraFPS = cast(fps, Int);
+
+        // Set up microphone
+        this.mic = flash.media.Microphone.getMicrophone();
+        this.mic.rate = 44; // 44.1KHz
+        this.mic.codec = flash.media.SoundCodec.NELLYMOSER; // Choose a codec
+        this.mic.gain = 100; // 0 .. 100
+        this.mic.setSilenceLevel(0);
+
+        // Use AMF0
+//        flash.net.NetConnection.defaultObjectEncoding = flash.net.ObjectEncoding.AMF0;
+
         this.nc = new flash.net.NetConnection();
         this.nc.addEventListener(flash.events.NetStatusEvent.NET_STATUS,onEvent);
         this.nc.connect(host, token);
@@ -50,6 +64,7 @@ class Webcam {
             this.cam.setKeyFrameInterval(cameraFPS);
             this.cam.setQuality(37500, 0); // 37500 bytes per second == 300 kbps
             this.ns.attachCamera(this.cam);
+            this.ns.attachAudio(this.mic);
             h264Settings = new flash.media.H264VideoStreamSettings();
             // Use Baseline Profile, Level 3.1
             h264Settings.setProfileLevel(flash.media.H264Profile.BASELINE,
